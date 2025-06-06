@@ -1,81 +1,42 @@
-package com.workintech.s17d2;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.json.JSONObject;
+package com.workintech.zoo;
+
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public class ResultAnalyzer implements TestWatcher, AfterAllCallback{
-    private List<TestResultStatus> testResultsStatus = new ArrayList<>();
-    private static final String taskId = "156";
+public class ResultAnalyzer implements TestWatcher, AfterAllCallback {
 
-    private enum TestResultStatus {
-        SUCCESSFUL, ABORTED, FAILED, DISABLED;
-    }
-
-    @Override
-    public void testDisabled(ExtensionContext context, Optional<String> reason) {
-        testResultsStatus.add(TestResultStatus.DISABLED);
-    }
+    private int testsSucceeded = 0;
+    private int testsFailed = 0;
+    private int testsSkipped = 0;
 
     @Override
     public void testSuccessful(ExtensionContext context) {
-        testResultsStatus.add(TestResultStatus.SUCCESSFUL);
-    }
-
-    @Override
-    public void testAborted(ExtensionContext context, Throwable cause) {
-        testResultsStatus.add(TestResultStatus.ABORTED);
+        testsSucceeded++;
+        System.out.println("✅ Test passed: " + context.getDisplayName());
     }
 
     @Override
     public void testFailed(ExtensionContext context, Throwable cause) {
-        testResultsStatus.add(TestResultStatus.FAILED);
+        testsFailed++;
+        System.out.println("❌ Test failed: " + context.getDisplayName() + " - " + cause.getMessage());
+    }
+
+    @Override
+    public void testDisabled(ExtensionContext context, Optional<String> reason) {
+        testsSkipped++;
+        String reasonText = reason.orElse("No reason provided");
+        System.out.println("⏭️ Test skipped: " + context.getDisplayName() + " - " + reasonText);
     }
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-        Map<TestResultStatus, Long> summary = testResultsStatus.stream()
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        // (summary.get(TestResultStatus.SUCCESSFUL) + summary.get(TestResultStatus.FAILED)) / summary.get(TestResultStatus.SUCCESSFUL);
-        long success = summary.get(TestResultStatus.SUCCESSFUL) != null ? summary.get(TestResultStatus.SUCCESSFUL) : 0;
-        long failure = summary.get(TestResultStatus.FAILED) != null ? summary.get(TestResultStatus.FAILED) : 0;
-
-        double score = (double) success / (success + failure);
-        String userId = "303444";
-
-        JSONObject json = new JSONObject();
-        json.put("score", score);
-        json.put("taskId", taskId);
-        json.put("userId", userId);
-        sendTestResult(json.toString());
-    }
-
-    private void sendTestResult(String result) throws IOException {
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        try {
-            HttpPost request = new HttpPost("https://coursey-gpt-backend.herokuapp.com/nextgen/taskLog/saveJavaTasks");
-            StringEntity params = new StringEntity(result);
-            request.addHeader("content-type", "application/json");
-            request.setEntity(params);
-            HttpResponse response = httpClient.execute(request);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        } finally {
-            httpClient.close();
-        }
+        System.out.println("\n=== Test Results ===");
+        System.out.println("✅ Passed: " + testsSucceeded);
+        System.out.println("❌ Failed: " + testsFailed);
+        System.out.println("⏭️ Skipped: " + testsSkipped);
+        System.out.println("Total: " + (testsSucceeded + testsFailed + testsSkipped));
     }
 }
