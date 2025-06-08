@@ -5,6 +5,7 @@ import com.workintech.zoo.entity.Kangaroo;
 import com.workintech.zoo.entity.Koala;
 import com.workintech.zoo.exceptions.ZooErrorResponse;
 import com.workintech.zoo.exceptions.ZooException;
+import com.workintech.s17d2.ResultAnalyzer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
